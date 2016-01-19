@@ -1,0 +1,130 @@
+%Set up
+clear; clear all; clc
+
+%Motor variables
+ldir = 8;
+rdir = 7;
+lspeed = 10;
+rspeed = 9;
+lspeedval = 100;
+rspeedval = 100;
+leftmove = 0;
+rightmove = 0;
+ser = arduino('/dev/tty.usbmodem1411');
+ser.pinMode(rdir,'output');
+ser.pinMode(rspeed,'output');
+ser.pinMode(ldir,'output');
+ser.pinMode(lspeed,'output');
+ser.digitalWrite(rdir,rightmove);
+ser.digitalWrite(ldir,leftmove);
+
+
+%My variables
+thresh = 700;
+%Super reliable
+fastspeed = 150;
+medspeed = 125;
+normspeed = 50;
+%Faster speed
+% fastspeed = 255;
+% medspeed = 180;
+% normspeed = 100;
+
+prevspeed = 0; %2 is turn right (lspeed = fastspeed) 5 is turn left (rspeed = fastspeed)
+
+lspeedval = normspeed;
+rspeedval = normspeed;
+
+
+%Initial read of the sensors
+for counter = 1:5
+    sensorvalues = ser.lineRead;
+end
+
+
+while 1
+    clc; %Clear the screen for next data update
+    
+    %Adjust l and rspeedval from here
+    display ('The value of sensorvalues(1) is')
+    display (sensorvalues(1))
+    if sensorvalues(1) > thresh
+        rspeedval = fastspeed;
+        lspeedval = normspeed;
+        prevspeed = 2;
+    end
+    
+    display ('The value of sensorvalues(2) is')
+    display (sensorvalues(2))
+    if sensorvalues(2) > thresh
+        rspeedval = medspeed;
+        lspeedval = normspeed;
+        prevspeed = 2;
+    end
+    
+    display ('The value of sensorvalues(3) is')
+    display (sensorvalues(3))
+    display ('The value of sensorvalues(4) is')
+    display (sensorvalues(4))
+    if sensorvalues(3) > thresh && sensorvalues(4) > thresh
+        lspeedval = normspeed;
+        rspeedval = normspeed;
+    end
+    
+    %Here I want medium speed to take priority
+    display ('The value of sensorvalues(6) is')
+    display (sensorvalues(6))
+    if sensorvalues(6) > thresh
+        lspeedval = fastspeed;
+        rspeedval = normspeed;
+        prevspeed = 5;
+    end
+    
+    display ('The value of sensorvalues(5) is')
+    display (sensorvalues(5))
+    if sensorvalues(5) > thresh
+        lspeedval = medspeed;
+        rspeedval = normspeed;
+        prevspeed = 5;
+    end
+    
+    %If the bot is off track
+    if sensorvalues(1) < thresh && sensorvalues(2) < thresh && sensorvalues(3) < thresh && sensorvalues(4) < thresh && sensorvalues(5) < thresh && sensorvalues(6) < thresh
+        if prevspeed == 2
+            lspeedval = normspeed;
+            rspeedval = fastspeed;
+        end
+        if prevspeed == 5
+            lspeedval = fastspeed;
+            rspeedval = normspeed;
+        end
+    end
+    
+    %If the robot hits a 90 degree angle
+    if sensorvalues(1) > thresh && sensorvalues(2) > thresh && sensorvalues(3) > thresh
+        turn(ser, sensorvalues, thresh, 1)
+        rspeedval = normspeed;
+        lspeedval = normspeed;
+    end
+    if sensorvalues(4) > thresh && sensorvalues(5) > thresh && sensorvalues(6) > thresh
+        turn(ser, sensorvalues, thresh, 0)
+        rspeedval = normspeed;
+        lspeedval = normspeed;
+    end
+    
+    
+    %Move robot here
+    ser.analogWrite(rspeed,rspeedval);
+    ser.analogWrite(lspeed,lspeedval);
+    display('lspeedval');
+    display(lspeedval);
+    display('rspeedval');
+    display(rspeedval);
+    
+    %Read sensor values here
+    for counter = 1:5
+        sensorvalues = ser.lineRead;
+    end
+end
+
+delete (ser);
