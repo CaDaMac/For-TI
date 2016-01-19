@@ -1,0 +1,41 @@
+function [ ] = turn( ser , sensorvalues, thresh, lorr) %0 is left, 1 is right
+defaultturntime = 1.4;
+turnspeed = 100;
+lspeedval = 0;  rspeedval = 0;
+lspeed = 10;
+rspeed = 9;
+
+if(lorr == 0)
+    lspeedval = turnspeed;
+    rspeedval = 0;
+end
+if(lorr == 1)
+    lspeedval = 0;
+    rspeedval = turnspeed;
+end
+
+display('Making 90 degree turn');
+display('lspeedval');
+display(lspeedval);
+display('rspeedval');
+display(rspeedval);
+
+ser.analogWrite(rspeed,rspeedval);
+ser.analogWrite(lspeed,lspeedval);
+
+pause(defaultturntime);
+
+while sensorvalues(3) < thresh || sensorvalues(4) < thresh
+    ser.analogWrite(rspeed,rspeedval);
+    ser.analogWrite(lspeed,lspeedval);
+    
+end
+
+display('Turn Success!');
+
+
+ser.analogWrite(rspeed,0);
+ser.analogWrite(lspeed,0);
+
+end
+
